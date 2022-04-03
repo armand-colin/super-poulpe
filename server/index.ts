@@ -10,6 +10,10 @@ const io = new Server(server);
 
 const games: { [key: string]: Game } = {}
 
+app.get('/', (req, res) => {
+    res.send('App deployed')
+})
+
 io.on('connection', (socket) => {
     const gameId = socket.handshake.query.gameId as string;
     const name = socket.handshake.query.name as string;
