@@ -4,6 +4,12 @@ import GameState from "../src/GameState";
 import GamePhase from "../src/GamePhase";
 import process from "process";
 
+let ip = "http://localhost:3066"
+
+if (process.argv[2])
+    ip = process.argv[2]
+
+
 const iostream = readlineNode.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -24,9 +30,15 @@ async function main() {
     const name = await readline("Nom d'utilisateur: ")
     const gameId = await readline("Id de la partie: ")
 
-    socket = io("http://localhost:3066", {
+    socket = io(ip, {
         query: { gameId, name }
     })
+
+    socket.on('disconnect', console.error)
+
+    socket.on("connect_error", (err) => {
+        console.log(`connect_error due to ${err.message}`);
+      });
 
     socket.on('connect', () => {
         console.log('Connected');
@@ -55,29 +67,39 @@ const printGameState = (state: GameState) => {
     switch (state.phase) {
         case GamePhase.preparing:
             console.log("+ PREPARATION +");
+            printPreparation(state)
             break;
         case GamePhase.playing:
             console.log("+ JEU +");
+            printPlaying(state)
             break;
         case GamePhase.betting:
             console.log("+ PARI +");
+            printBetting(state)
             break;
     }
 
+}
+
+const printPreparation = (state: GameState) => {
     console.log("")
+    console.log(state.players.map(player => player.id === state.creator ? `*${player.name}*` : player.name).join(', '))
+}
 
-    if (Object.keys(state.table).length > 0) {
-        console.log("Table:")
-        console.log(Object.values(state.table).join(' '))
-        console.log("")
-    }
-
+const printBetting = (state: GameState) => {
     state.players.forEach((player ,i) => {
         const self = player.id === socket.id
         const show = (self && state.round > 1) || (!self && state.round === 1)
-        console.log(`${state.turn === i ? '>' : ' '} ${player.name}: ${player.cards.map(c => show ? c == -1 ? "J" : c : "#").join(' ')}`);
+        console.log(`${state.turn === i ? '>' : ' '} ${player.name} (${player.health}❤️): ${player.cards.map(c => show ? c == -1 ? "J" : c : "#").join(' ')} ${state.turn > i ? '> ' + player.bet : ''}`);
     })
+}
 
+const printPlaying = (state: GameState) => {
+    state.players.forEach((player ,i) => {
+        const self = player.id === socket.id
+        const show = (self && state.round > 1) || (!self && state.round === 1)
+        console.log(`${state.turn === i ? '>' : ' '} ${player.name} (${player.health}❤️, ${player.passes}/${player.bet}): ${player.cards.map(c => show ? c == -1 ? "J" : c : "#").join(' ')} ${state.turn > i ? '> ' + state.table[player.id] : ''}`);
+    })
 }
 
 const askCommand = () => {

@@ -17,6 +17,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "server": "pm2 build/server/index.js"
+    "server": "ts-node server/index.ts",
+    "client": "ts-node client/index.ts"
   }
 }
