@@ -125,6 +125,9 @@ export default class Game {
     }
 
     private nextRound() {
+        this._turn = 0
+        this._pass = 0
+
         // Calc health lost for this 
         for (const player of this._players) {
             const delta = Math.abs(player.passes - player.bet)
